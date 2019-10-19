@@ -19,9 +19,9 @@ class MusicMiddleware(object):
 		print('音乐：', text)
 		if text in ['播放下一曲', '播放下一个', '播放下个', '播放下一首']: return self.quit_play()
 		if text in ['播放上一曲', '播放上一个', '播放上个', '播放上一首']:
-			self.current_index = self.current_index - 1
+			self.current_index = self.current_index - 2
 			return self.quit_play()
-		if text in ['关闭音乐', '关掉音乐', '关音乐', '暂停音乐', '音乐暂停']: return self.close_music()
+		if text in ['关闭音乐', '关掉音乐', '关音乐']: return self.close_music()
 
 		if music.playing == 2:
 			music.continue_play();
@@ -30,7 +30,7 @@ class MusicMiddleware(object):
 			if text in ['后退', '向后退']: return self.backward()
 			if text in ['加大音量', '增加音量']: return self.inc_volume()
 			if text in ['减小音量', '减少音量', '降低音量']: return self.dec_volume()
-			if text in ['暂停音乐', '暂停播放'] and self.playing == 1: return self.pause_play()
+			if text in ['暂停音乐', '暂停播放', '音乐暂停'] and self.playing == 1: return self.pause_play()
 
 		if music.playing == 0:
 			if text in ['随机播放音乐', '随机播放', '随机听歌']: return self.play_music(shuffle=True)
@@ -141,26 +141,27 @@ class MusicMiddleware(object):
 				self.current_list.append(file)
 
 			if shuffle: random.shuffle(self.current_list)
-			self.play_next(0)
+			self.current_index = 0
+			self.play_next()
 
 		return False
 
-	def play_next(self, index):
-		self.current_index = index
-		thread = threading.Thread(target=self.mplayer, args=(index,), name="mplayer")
+	def play_next(self):
+		thread = threading.Thread(target=self.mplayer, name="mplayer")
 		thread.setDaemon(True)
 		thread.start()
 
-	def mplayer(self, index):
-		if (index < 0 or self.exit): return
-		if (index >= len(self.current_list)):
+	def mplayer(self):
+		if (self.current_index < 0 or self.exit): return
+		if (self.current_index >= len(self.current_list)):
 			if self.loop:
 				print('循环播放！')
 				if shuffle: random.shuffle(self.current_list)
-				return self.play_next(0)
+				self.current_index = 0
+				return self.play_next()
 			print('播放结束！')
 			self.playing = 0
-		file = self.current_list[index]
+		file = self.current_list[self.current_index]
 		print('播放音乐：', file)
 		self.player_handler = subprocess.Popen(["mplayer", file], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		self.playing = 1
@@ -171,7 +172,8 @@ class MusicMiddleware(object):
 			if strout == 'Exiting... (End of file)\n' or strout == 'Exiting... (Quit)\n':
 				self.playing = 0
 				break
-		self.play_next(index+1)
+		self.current_index = self.current_index + 1
+		self.play_next()
 
 	def quit_play(self):
 		if self.playing:
