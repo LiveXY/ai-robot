@@ -54,11 +54,15 @@ class MusicMiddleware(object):
 			search = re.search(r'循环播放(.*?)音乐', text, re.M|re.I)
 			if search: return self.play_music(name=search.group(1), loop=True)
 
+		search = re.search(r'搜索(.*?)歌曲', text, re.M|re.I)
+		if search: return self.search_music(search.group(1))
 		search = re.search(r'搜索(.*?)音乐', text, re.M|re.I)
 		if search: return self.search_music(search.group(1))
 		search = re.search(r'查找(.*?)音乐', text, re.M|re.I)
 		if search: return self.search_music(search.group(1))
 
+		search = re.search(r'下载(.*?)歌曲', text, re.M|re.I)
+		if search: return self.down_music(search.group(1))
 		search = re.search(r'下载(.*?)音乐', text, re.M|re.I)
 		if search: return self.down_music(search.group(1))
 
@@ -145,6 +149,11 @@ class MusicMiddleware(object):
 			if shuffle: random.shuffle(self.current_list)
 			self.current_index = 0
 			self.play_next()
+		else:
+			text = ''
+			if singer: text = text + singer
+			if name: text = text + name
+			self.down_music(text)
 
 		return False
 
@@ -215,7 +224,7 @@ class MusicMiddleware(object):
 		if (not os.path.exists(MUSIC_PATH)): os.mkdir(MUSIC_PATH)
 		self.load_music_file(MUSIC_PATH)
 		print('共加载', len(self.music_list), '首音乐！')
-		if len(self.music_list) == 0: self.play_text('您还没有音乐，可以通过搜索和下载指令获得您需要的音乐，如：搜索刘德华的笨小孩 和 下载刘德华的笨小孩');
+		if len(self.music_list) == 0: self.play_text('您还没有音乐，可以通过搜索和下载指令获得您需要的音乐，如：搜索绿色音乐 和 下载绿色音乐');
 		else: self.play_text('您有 %s 首音乐，可以通过播放音乐指令播放'%len(self.music_list));
 
 	def search_request(self, keyword):
@@ -300,8 +309,8 @@ class MusicMiddleware(object):
 				self.play_text('%s 下载完成！'%text)
 
 		if flag:
-			music_list.clear();
-			load_music()
+			self.music_list.clear();
+			self.load_music()
 
 		return False
 
@@ -309,7 +318,7 @@ music = MusicMiddleware()
 
 if __name__ == "__main__":
 	#music.search_music("风筝误");
-	music.down_music("风筝误");
+	#music.down_music("风筝误");
 	#music.handle("播放风筝误");
 	#music.handle("我要听风筝误");
 	#music.handle("我要听大壮的我们不一样");
