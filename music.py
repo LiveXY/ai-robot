@@ -167,7 +167,7 @@ class MusicMiddleware(object):
 		if (self.current_index >= len(self.current_list) - 1):
 			if self.loop:
 				print('循环播放！')
-				if shuffle: random.shuffle(self.current_list)
+				if self.shuffle: random.shuffle(self.current_list)
 				self.current_index = 0
 				return self.play_next()
 			print('播放结束！')
