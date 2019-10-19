@@ -22,15 +22,19 @@ class MusicMiddleware(object):
 			self.current_index = self.current_index - 1
 			return self.quit_play()
 		if text in ['关闭音乐', '关掉音乐', '关音乐', '暂停音乐', '音乐暂停']: return self.close_music()
-		if text in ['快进', '向前进']: return self.forward()
-		if text in ['后退', '向后退']: return self.backward()
-		if text in ['加大音量', '增加音量']: return self.inc_volume()
-		if text in ['减小音量', '减少音量', '降低音量']: return self.dec_volume()
-		if text in ['暂停音乐', '暂停播放']: return self.pause_play()
+
+		if music.playing == 2:
+			music.continue_play();
+			time.sleep(0.5)
+			if text in ['快进', '向前进']: return self.forward()
+			if text in ['后退', '向后退']: return self.backward()
+			if text in ['加大音量', '增加音量']: return self.inc_volume()
+			if text in ['减小音量', '减少音量', '降低音量']: return self.dec_volume()
+			if text in ['暂停音乐', '暂停播放'] and self.playing == 1: return self.pause_play()
 
 		if music.playing == 0:
 			if text in ['随机播放音乐', '随机播放', '随机听歌']: return self.play_music(shuffle=True)
-			if text in ['继续播放', '继续播放音乐']: return self.pause_play()
+			if text in ['继续播放', '继续播放音乐']: return self.continue_play()
 			if text in ['播放音乐', '打开音乐', '音乐走起', '好想听歌', '我要听音乐', '我要听歌', '音乐嗨起来', '嗨起来']: return self.play_music()
 
 			search = re.search(r'我要听(.*?)的(.*)', text, re.M|re.I)
@@ -56,7 +60,6 @@ class MusicMiddleware(object):
 		search = re.search(r'下载(.*?)音乐', text, re.M|re.I)
 		if search: return self.down_music(search.group(1))
 
-		if music.playing == 2: music.continue_play();
 		return True
 
 	def pause_play(self):
@@ -64,32 +67,38 @@ class MusicMiddleware(object):
 			self.playing = 2
 			self.player_handler.stdin.write(b'p')
 			self.player_handler.stdin.flush()
+		return False
 
 	def continue_play(self):
 		if self.playing:
 			self.playing = 1
 			self.player_handler.stdin.write(b'c')
 			self.player_handler.stdin.flush()
+		return False
 
 	def inc_volume(self):
 		if self.playing:
 			self.player_handler.stdin.write(b'*')
 			self.player_handler.stdin.flush()
+		return False
 
 	def dec_volume(self):
 		if self.playing:
 			self.player_handler.stdin.write(b'/')
 			self.player_handler.stdin.flush()
+		return False
 
 	def backward(self):
 		if self.playing:
 			self.player_handler.stdin.write(b'<-')
 			self.player_handler.stdin.flush()
+		return False
 
 	def forward(self):
 		if self.playing:
 			self.player_handler.stdin.write(b'->')
 			self.player_handler.stdin.flush()
+		return False
 
 	def play_music(self, name = None, singer = None, shuffle = False, loop = False):
 		if self.playing: return False
