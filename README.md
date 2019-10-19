@@ -18,6 +18,13 @@ make
 cp _snowboydetect.so ai-robot/
 ```
 
+免费申请百度语音识别、图灵机器人
+```
+1，百度语音识别申请：http://ai.baidu.com/
+2，图灵机器人申请：http://www.turingapi.com/
+3，申请成功后更改config.py文件中的BAIDUS和TULINGS变量
+```
+
 安装启动方法：
 ```
 git clone https://github.com/LiveXY/ai-robot
