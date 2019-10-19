@@ -36,6 +36,14 @@ python3 app.js
 说：“小白” 唤起后说 “武汉天气”
 ```
 
+更换唤醒词
+```
+1，登陆https://snowboy.kitt.ai/
+2，进入https://snowboy.kitt.ai/dashboard
+3，点击“ Create Hotword ”按钮，按提示生成自己的唤醒词并下载到项目的resources目录
+4，更改config.py文件中的MODELS变量，如果支持多个唤醒词使用逗号分隔（同时要更改SENSITIVITY变量）
+```
+
 文件详解
 ```
 app.py #启动程序
