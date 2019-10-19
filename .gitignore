@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+cmd-wav/
+tts-wav/
+temp/
