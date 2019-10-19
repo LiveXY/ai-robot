@@ -28,7 +28,7 @@ def baidu_asr(file_name, lan = 'zh'):
 
 #文字转语音
 def baidu_tts(text, file_name, per = 0):
-	result  = baidu().synthesis(text, 'zh', 1, {'vol': 5, 'per': per})
+	result  = baidu().synthesis(text, 'zh', 1, {'vol': 5, 'per': per, 'spd': 7})
 	if not isinstance(result, dict):
 		with open(file_name, 'wb') as f:
 			f.write(result)

@@ -51,15 +51,14 @@ python3 app.js
 4，更改config.py文件中的MODELS变量，如果支持多个唤醒词使用逗号分隔（同时要更改SENSITIVITY变量）
 ```
 
-文件详解
+代码文件详解
 ```
 app.py #启动程序
 config.py #配置文件
 middleware.py #中间件
 music.py #音乐中间件
-music.py #音乐中间件
 snowboydecoder.py #snowboy唤起识别
 snowboydetect.py #snowboy官方代码
 speech.py #语音识别
-tuling.py #图灵
+tuling.py #图灵中间件
 ```

@@ -1,7 +1,5 @@
-import requests, json, time, random, os, hashlib
-from playsound import playsound
+import requests, json, time, random, os
 from config import TULINGS
-from speech import baidu_tts
 from music import music
 
 class TulingMiddleware(object):
@@ -31,14 +29,7 @@ class TulingMiddleware(object):
 			if (item['resultType'] != 'text'): continue
 			text = item['values']['text']
 			print('图灵：', text)
-			if not os.path.exists('tts-wav/'): os.mkdir('tts-wav/')
-			filename = 'tts-wav/%s.mp3'%hashlib.md5(text.encode()).hexdigest()
-			baidu_tts(text, filename)
-			if music.playing == 1 and text: music.pause_play();
-			time.sleep(0.5)
-			playsound(filename)
-			time.sleep(0.5)
-			if music.playing == 2 and text: music.continue_play();
+			music.play_text(text)
 
 tuling = TulingMiddleware()
 

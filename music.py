@@ -1,6 +1,8 @@
-import re, os, subprocess, random, threading, time
+import re, os, subprocess, random, threading, time, hashlib
 from playsound import playsound
+import requests
 from config import MUSIC_PATH
+from speech import baidu_tts
 
 class MusicMiddleware(object):
 	def __init__(self):
@@ -12,7 +14,7 @@ class MusicMiddleware(object):
 		self.shuffle = False
 		self.loop = False
 		self.exit = False
-		self.load_music_file(MUSIC_PATH)
+		self.load_music()
 
 	def handle(self, context):
 		text = re.compile(r",|\?|\.|、|，|？|。").sub("", context)
@@ -153,7 +155,7 @@ class MusicMiddleware(object):
 
 	def mplayer(self):
 		if (self.current_index < 0 or self.exit): return
-		if (self.current_index >= len(self.current_list)):
+		if (self.current_index >= len(self.current_list) - 1):
 			if self.loop:
 				print('循环播放！')
 				if shuffle: random.shuffle(self.current_list)
@@ -206,21 +208,111 @@ class MusicMiddleware(object):
 				fullfile = os.path.join(path, i)
 				filepath, filename = os.path.split(fullfile)
 				name, extension = os.path.splitext(filename)
-				if extension in ['.mp3', '.flac', '.wav']:
+				if extension in ['.mp3', '.flac', '.wav', '.m4a']:
 					self.add_music(name, extension, fullfile)
 
 	def load_music(self):
-		if (not os.path.exists(MUSIC_PATH)):
-			print('音乐路径不存在：', MUSIC_PATH)
-			return
+		if (not os.path.exists(MUSIC_PATH)): os.mkdir(MUSIC_PATH)
+		self.load_music_file(MUSIC_PATH)
 		print('共加载', len(self.music_list), '首音乐！')
+		if len(self.music_list) == 0: self.play_text('您还没有音乐，可以通过搜索和下载指令获得您需要的音乐，如：搜索刘德华的笨小孩 和 下载刘德华的笨小孩');
+		else: self.play_text('您有 %s 首音乐，可以通过播放音乐指令播放'%len(self.music_list));
+
+	def search_request(self, keyword):
+		params = {"w": keyword, "format": "json", "p": 1, "n": 2}
+		session = requests.Session()
+		session.headers.update({"referer": "http://m.y.qq.com", "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"})
+		resp = session.get("http://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp", params=params, timeout=7)
+		if resp.status_code != requests.codes.ok or not resp.text: return False
+		list = resp.json().get("data", {}).get("song", {}).get("list", [])
+		results = []
+		for item in list:
+			singers = [s.get("name", "") for s in item.get("singer", "")]
+			title = item.get("songname", "")
+			singer = "、".join(singers)
+			mid = item.get("songmid", "")
+			size = round(item.get("size128", 0) / 1048576, 2)
+			if size > 0: results.append({'mid': mid, 'singer': singer, 'title': title, 'size': size})
+		return results
+
+
+	def play_text(self, text):
+		if not os.path.exists('tts-wav/'): os.mkdir('tts-wav/')
+		filename = 'tts-wav/%s.mp3'%hashlib.md5(text.encode()).hexdigest()
+		baidu_tts(text, filename)
+		if self.playing == 1 and text: self.pause_play();
+		time.sleep(0.5)
+		playsound(filename)
+		time.sleep(0.5)
+		if self.playing == 2 and text: self.continue_play();
+		return False
+
+	def search_music(self, keyword):
+		list = self.search_request(keyword)
+		if len(list) > 0:
+			text = '搜索到%s个结果：'%len(list)
+			for item in list:
+				text = text + item['singer'] + '，的，' + item['title'] + '、、'
+		else:
+			text = '没有搜索到：%s'%keyword
+		self.play_text(text)
+		return False
+
+	def down_qq_music(self, mid, filename, size):
+		guid = str(random.randrange(1000000000, 10000000000))
+		params = { "guid": guid, "loginUin": "3051522991", "format": "json", "platform": "yqq", "cid": "205361747", "uin": "3051522991", "songmid": mid, "needNewCode": 0}
+		rate_list = [("A000", "ape", 800), ("F000", "flac", 800), ("M800", "mp3", 320), ("C400", "m4a", 128), ("M500", "mp3", 128)]
+		session = requests.Session()
+		session.headers.update({"referer": "http://y.qq.com"})
+		url = ''; ext = '';
+		for rate in rate_list:
+			params["filename"] = "%s%s.%s" % (rate[0], mid, rate[1])
+			resp = session.get("https://c.y.qq.com/base/fcgi-bin/fcg_music_express_mobile3.fcg", params=params, timeout=7)
+			vkey = resp.json().get("data", {}).get("items", [])[0].get("vkey", "")
+			if vkey:
+				url = ("http://dl.stream.qqmusic.qq.com/%s?vkey=%s&guid=%s&uin=3051522991&fromtag=64"%(params["filename"], vkey, guid))
+				ext = rate[1]
+				break
+
+		if len(url) == 0 or len(ext) == 0: return False
+
+		session.headers.update({"referer": "http://m.y.qq.com", "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"})
+		res = session.get(url)
+		file = '{}/{}.{}'.format(MUSIC_PATH, filename, ext)
+		with open(file, 'wb') as f:
+			f.write(res.content)
+		fsize = os.path.getsize(file)
+		if fsize < 10 * 1024:
+			os.remove(file)
+			return False
+		return True
+
+	def down_music(self, keyword):
+		list = self.search_request(keyword)
+		if len(list) == 0: return self.play_text('没有找到您要的音乐！')
+		flag = False
+		for item in list:
+			filename = '%s-%s'%(item['singer'], item['title'])
+			text = '%s，的，%s'%(item['singer'], item['title'])
+			result = self.down_qq_music(item['mid'], filename, item['size'])
+			if result:
+				flag = True
+				self.play_text('%s 下载完成！'%text)
+
+		if flag:
+			music_list.clear();
+			load_music()
+
+		return False
 
 music = MusicMiddleware()
 
 if __name__ == "__main__":
-	music.handle("播放风筝误");
-	#music("我要听风筝误");
-	#music("我要听大壮的我们不一样");
-	#music("播放大壮的音乐");
-	#music("播放刘德华的音乐");
-	#music("你好");
+	#music.search_music("风筝误");
+	music.down_music("风筝误");
+	#music.handle("播放风筝误");
+	#music.handle("我要听风筝误");
+	#music.handle("我要听大壮的我们不一样");
+	#music.handle("播放大壮的音乐");
+	#music.handle("播放刘德华的音乐");
+	#music.handle("你好");
