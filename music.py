@@ -39,34 +39,30 @@ class MusicMiddleware(object):
 			if text in ['继续播放', '继续播放音乐']: return self.continue_play()
 			if text in ['播放音乐', '打开音乐', '音乐走起', '好想听歌', '我要听音乐', '我要听歌', '音乐嗨起来', '嗨起来']: return self.play_music()
 
-			search = re.search(r'我要听(.*?)的(.*)', text, re.M|re.I)
-			if search: return self.play_music(name=search.group(2), singer=search.group(1))
-			search = re.search(r'播放(.*?)的(.*)', text, re.M|re.I)
-			if search: return self.play_music(name=search.group(2), singer=search.group(1))
+			search = self.re_searchs(text, [r'我要听(.*?)的(.*)', r'播放(.*?)的(.*)'])
+			if search: return self.play_music(name=search[1], singer=search[0])
 
-			search = re.search(r'我要听(.*)', text, re.M|re.I)
-			if search: return self.play_music(name=search.group(1))
-			search = re.search(r'播放(.*)', text, re.M|re.I)
-			if search: return self.play_music(name=search.group(1))
-			search = re.search(r'打开(.*?)音乐', text, re.M|re.I)
-			if search: return self.play_music(name=search.group(1))
+			search = self.re_searchs(text, [r'我要听(.*)', r'播放(.*)', r'打开(.*?)音乐', r'打开音乐(.*)'])
+			if search: return self.play_music(name=search)
 
-			search = re.search(r'循环播放(.*?)音乐', text, re.M|re.I)
-			if search: return self.play_music(name=search.group(1), loop=True)
+			search = self.re_searchs(text, [r'循环播放(.*)'])
+			if search: return self.play_music(name=search, loop=True)
 
-		search = re.search(r'搜索(.*?)歌曲', text, re.M|re.I)
-		if search: return self.search_music(search.group(1))
-		search = re.search(r'搜索(.*?)音乐', text, re.M|re.I)
-		if search: return self.search_music(search.group(1))
-		search = re.search(r'查找(.*?)音乐', text, re.M|re.I)
-		if search: return self.search_music(search.group(1))
+		search = self.re_searchs(text, [r'搜索(.*?)歌曲', r'搜索(.*?)音乐', r'查找(.*?)音乐', r'搜索歌曲(.*)', r'搜索音乐(.*)'])
+		if search: return self.search_music(search)
 
-		search = re.search(r'下载(.*?)歌曲', text, re.M|re.I)
-		if search: return self.down_music(search.group(1))
-		search = re.search(r'下载(.*?)音乐', text, re.M|re.I)
-		if search: return self.down_music(search.group(1))
+		search = self.re_searchs(text, [r'下载(.*?)歌曲', r'下载(.*?)音乐'])
+		if search: return self.down_music(search)
 
 		return True
+
+	def re_searchs(self, text, list):
+		for key in list:
+			results = re.findall(key, text, re.M|re.I)
+			if results and results[0] and len(results) > 1 and results[1]:
+				return [results[0], results[1]]
+			if results and results[0]: return results[0]
+		return False
 
 	def pause_play(self):
 		if self.playing:
@@ -172,6 +168,10 @@ class MusicMiddleware(object):
 				return self.play_next()
 			print('播放结束！')
 			self.playing = 0
+			self.current_list.clear()
+			self.current_index = 0
+			return
+
 		file = self.current_list[self.current_index]
 		print('播放音乐：', file)
 		self.player_handler = subprocess.Popen(["mplayer", file], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -248,7 +248,7 @@ class MusicMiddleware(object):
 	def play_text(self, text):
 		if not os.path.exists('tts-wav/'): os.mkdir('tts-wav/')
 		filename = 'tts-wav/%s.mp3'%hashlib.md5(text.encode()).hexdigest()
-		baidu_tts(text, filename)
+		if not os.path.exists(filename): baidu_tts(text, filename)
 		if self.playing == 1 and text: self.pause_play();
 		time.sleep(0.5)
 		playsound(filename)
@@ -317,6 +317,8 @@ class MusicMiddleware(object):
 music = MusicMiddleware()
 
 if __name__ == "__main__":
+	search = music.re_searchs('播放陈雪凝的绿色', [r'播放(.*?)的(.*)'])
+	print(search[1], search[0])
 	#music.search_music("风筝误");
 	#music.down_music("风筝误");
 	#music.handle("播放风筝误");
