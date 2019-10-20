@@ -30,14 +30,14 @@ class MusicMiddleware(object):
 			time.sleep(0.5)
 			if text in ['快进', '向前进']: return self.forward()
 			if text in ['后退', '向后退']: return self.backward()
-			if text in ['加大音量', '增加音量']: return self.inc_volume()
-			if text in ['减小音量', '减少音量', '降低音量']: return self.dec_volume()
+			if text in ['加大音量', '增加音量', '上调音量', '声音太小了']: return self.inc_volume()
+			if text in ['减小音量', '减少音量', '降低音量', '声音太大了']: return self.dec_volume()
 			if text in ['暂停音乐', '暂停播放', '音乐暂停'] and self.playing == 1: return self.pause_play()
 
 		if music.playing == 0:
-			if text in ['随机播放音乐', '随机播放', '随机听歌']: return self.play_music(shuffle=True)
+			if text in ['随机播放音乐', '随机播放', '随机听歌', '随机音乐']: return self.play_music(shuffle=True)
 			if text in ['继续播放', '继续播放音乐']: return self.continue_play()
-			if text in ['播放音乐', '打开音乐', '音乐走起', '好想听歌', '我要听音乐', '我要听歌', '音乐嗨起来', '嗨起来']: return self.play_music()
+			if text in ['播放音乐', '音乐播放', '打开音乐', '音乐走起', '好想听歌', '我要听音乐', '我要听歌', '音乐嗨起来', '嗨起来']: return self.play_music()
 
 			search = self.re_searchs(text, [r'我要听(.*?)的(.*)', r'播放(.*?)的(.*)'])
 			if search: return self.play_music(name=search[1], singer=search[0])
@@ -51,7 +51,7 @@ class MusicMiddleware(object):
 		search = self.re_searchs(text, [r'搜索(.*?)歌曲', r'搜索(.*?)音乐', r'查找(.*?)音乐', r'搜索歌曲(.*)', r'搜索音乐(.*)'])
 		if search: return self.search_music(search)
 
-		search = self.re_searchs(text, [r'下载(.*?)歌曲', r'下载(.*?)音乐'])
+		search = self.re_searchs(text, [r'下载(.*?)歌曲', r'下载(.*?)音乐', r'下载音乐(.*?)'])
 		if search: return self.down_music(search)
 
 		return True
@@ -113,28 +113,28 @@ class MusicMiddleware(object):
 		if not name and not singer:
 			for item in self.music_list:
 				list[item['name']] = item['file']
-
-		if name and singer:
-			new = "%s-%s"%(singer, name)
-			for item in self.music_list:
-				if re.search(new, item['name'], re.M|re.I):
-					list[item['name']] = item['file']
-					print('查找到：', item)
-
-		if name:
-			name = re.compile(r"的音乐|音乐").sub("", name)
-			print('查找name：', name)
-			for item in self.music_list:
-				if re.search(name, item['name'], re.M|re.I):
-					list[item['name']] = item['file']
-					print('查找到：', item)
-		if singer:
-			singer = re.compile(r"的音乐|音乐").sub("", singer)
-			print('查找singer：', singer)
-			for item in self.music_list:
-				if re.search(singer, item['name'], re.M|re.I):
-					list[item['name']] = item['file']
-					print('查找到：', item)
+		else:
+			if name and singer:
+				new = "%s-%s"%(singer, name)
+				for item in self.music_list:
+					if re.search(new, item['name'], re.M|re.I):
+						list[item['name']] = item['file']
+						print('查找到：', item)
+			else:
+				if name:
+					name = re.compile(r"的音乐|音乐").sub("", name)
+					print('查找name：', name)
+					for item in self.music_list:
+						if re.search(name, item['name'], re.M|re.I):
+							list[item['name']] = item['file']
+							print('查找到：', item)
+				if singer:
+					singer = re.compile(r"的音乐|音乐").sub("", singer)
+					print('查找singer：', singer)
+					for item in self.music_list:
+						if re.search(singer, item['name'], re.M|re.I):
+							list[item['name']] = item['file']
+							print('查找到：', item)
 
 		if len(list) > 0:
 			self.current_list.clear()
@@ -160,7 +160,7 @@ class MusicMiddleware(object):
 
 	def mplayer(self):
 		if (self.current_index < 0 or self.exit): return
-		if (self.current_index >= len(self.current_list) - 1):
+		if (self.current_index >= len(self.current_list)):
 			if self.loop:
 				print('循环播放！')
 				if self.shuffle: random.shuffle(self.current_list)
@@ -227,8 +227,8 @@ class MusicMiddleware(object):
 		if len(self.music_list) == 0: self.play_text('您还没有音乐，可以通过搜索和下载指令获得您需要的音乐，如：搜索绿色音乐 和 下载绿色音乐');
 		else: self.play_text('您有 %s 首音乐，可以通过播放音乐指令播放'%len(self.music_list));
 
-	def search_request(self, keyword):
-		params = {"w": keyword, "format": "json", "p": 1, "n": 2}
+	def search_request(self, keyword, top):
+		params = {"w": keyword, "format": "json", "p": 1, "n": top}
 		session = requests.Session()
 		session.headers.update({"referer": "http://m.y.qq.com", "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"})
 		resp = session.get("http://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp", params=params, timeout=7)
@@ -256,8 +256,8 @@ class MusicMiddleware(object):
 		if self.playing == 2 and text: self.continue_play();
 		return False
 
-	def search_music(self, keyword):
-		list = self.search_request(keyword)
+	def search_music(self, keyword, top=3):
+		list = self.search_request(keyword, top)
 		if len(list) > 0:
 			text = '搜索到%s个结果：'%len(list)
 			for item in list:
@@ -296,8 +296,8 @@ class MusicMiddleware(object):
 			return False
 		return True
 
-	def down_music(self, keyword):
-		list = self.search_request(keyword)
+	def down_music(self, keyword, top=1):
+		list = self.search_request(keyword, top)
 		if len(list) == 0: return self.play_text('没有找到您要的音乐！')
 		flag = False
 		for item in list:
