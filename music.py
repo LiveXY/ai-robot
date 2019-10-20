@@ -1,5 +1,4 @@
 import re, os, subprocess, random, threading, time, hashlib
-from playsound import playsound
 import requests
 from config import MUSIC_PATH
 from speech import baidu_tts
@@ -251,7 +250,7 @@ class MusicMiddleware(object):
 		if not os.path.exists(filename): baidu_tts(text, filename)
 		if self.playing == 1 and text: self.pause_play();
 		time.sleep(0.5)
-		playsound(filename)
+		subprocess.run(["mplayer", filename])
 		time.sleep(0.5)
 		if self.playing == 2 and text: self.continue_play();
 		return False

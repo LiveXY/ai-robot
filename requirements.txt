@@ -1,4 +1,3 @@
 pyaudio
 baidu-aip
-playsound
 requests
