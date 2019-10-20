@@ -4,7 +4,7 @@ ai-robot是一个中文人工智能机器人。支持语音唤起、智能音箱
 
 安装第三方工具
 ```
-#树莓派安装
+#树莓派安装：https://github.com/LiveXY/elearning/blob/master/raspberrypi4.txt
 sudo apt install python-pyaudio python3-pyaudio sox swig libatlas-base-dev mplayer -y
 #MAC安装
 brew install swig portaudio sox mplayer
