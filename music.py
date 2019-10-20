@@ -50,7 +50,7 @@ class MusicMiddleware(object):
 		search = self.re_searchs(text, [r'搜索(.*?)歌曲', r'搜索(.*?)音乐', r'查找(.*?)音乐', r'搜索歌曲(.*)', r'搜索音乐(.*)'])
 		if search: return self.search_music(search)
 
-		search = self.re_searchs(text, [r'下载(.*?)歌曲', r'下载(.*?)音乐', r'下载音乐(.*?)'])
+		search = self.re_searchs(text, [r'下载(.*?)歌曲', r'下载(.*?)音乐', r'下载音乐(.*)'])
 		if search: return self.down_music(search)
 
 		return True
