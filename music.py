@@ -177,9 +177,9 @@ class MusicMiddleware(object):
 		self.playing = 1
 		while True:
 			if self.exit: break
-			strout = self.player_handler.stdout.readline().decode('u8')
-			print(strout)
-			if strout == 'Exiting... (End of file)\n' or strout == 'Exiting... (Quit)\n':
+			strout = self.player_handler.stdout.readline()
+			#print(strout)
+			if strout == b'Exiting... (End of file)\n' or strout == b'Exiting... (Quit)\n':
 				self.playing = 0
 				break
 		self.current_index = self.current_index + 1
@@ -326,3 +326,9 @@ if __name__ == "__main__":
 	#music.handle("播放大壮的音乐");
 	#music.handle("播放刘德华的音乐");
 	#music.handle("你好");
+	#排行榜分类https://c.y.qq.com/v8/fcg-bin/fcg_v8_toplist_opt.fcg?page=index&format=html&tpl=macv4&v8debug=1&jsonCallback=jsonCallback
+	#最新音乐https://c.y.qq.com/v8/fcg-bin/fcg_v8_toplist_cp.fcg?g_tk=5381&uin=0&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=h5&needNewCode=1&tpl=3&page=detail&type=top&topid=27&_=1519963122923
+	#推荐音乐https://c.y.qq.com/v8/fcg-bin/fcg_v8_toplist_cp.fcg?g_tk=5381&uin=0&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=h5&needNewCode=1&tpl=3&page=detail&type=top&topid=36&_=1520777874472
+	#歌词https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?callback=MusicJsonCallback_lrc&pcachetime=1494070301711&songmid=songmid&g_tk=5381&jsonpCallback=MusicJsonCallback_lrc&loginUin=0&hostUin=0&format=jsonp&inCharset=utf8&outCharset=utf-8%C2%ACice=0&platform=yqq&needNewCode=0
+	#网络音乐排行榜https://c.y.qq.com/v8/fcg-bin/fcg_v8_toplist_cp.fcg?g_tk=5381&uin=0&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=h5&needNewCode=1&tpl=3&page=detail&type=top&topid=28&_=1519963122923
+	#热词https://c.y.qq.com/splcloud/fcgi-bin/gethotkey.fcg?g_tk=5381&jsonpCallback=hotSearchKeysmod_top_search&loginUin=0&hostUin=0&format=jsonp&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq&needNewCode=0
