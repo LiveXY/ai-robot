@@ -30,7 +30,7 @@ cp _snowboydetect.so ai-robot/
 git clone https://github.com/LiveXY/ai-robot
 cd ai-robot/
 pip3 install -r requirements.txt
-python3 app.js
+python3 app.py
 ```
 
 语音测试
